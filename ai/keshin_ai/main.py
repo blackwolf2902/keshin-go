@@ -1,10 +1,12 @@
 """FastAPI application entry point for the Keshin AI service."""
 
+import json
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 from .config import Settings
 from .llm.gemini import GeminiProvider
@@ -95,6 +97,47 @@ async def health():
             "tts": settings.tts_provider if settings else "unknown",
         },
     }
+
+
+@app.get("/api/chat/stream")
+async def chat_stream(request: Request):
+    """SSE streaming chat endpoint."""
+    character_id = request.query_params.get("character_id", "default")
+    message = request.query_params.get("message", "")
+    session_id = request.query_params.get("session_id", "default")
+    personality_prompt = request.query_params.get("personality_prompt", "")
+    character_name = request.query_params.get("character_name", "")
+    character_lang = request.query_params.get("character_lang", "ja")
+
+    if not message:
+        return {"error": "message is required"}, 400
+
+    ctx = PipelineContext(
+        user_message=message,
+        character_id=character_id,
+        session_id=session_id,
+        personality_prompt=personality_prompt,
+        character_name=character_name,
+        character_lang=character_lang,
+    )
+
+    async def event_stream():
+        async for event in orchestrator.run_stream(ctx):
+            if await request.is_disconnected():
+                break
+            event_type = event.get("event", "")
+            event_data = event.get("data", {})
+            yield f"event: {event_type}\ndata: {json.dumps(event_data, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @app.post("/api/chat")

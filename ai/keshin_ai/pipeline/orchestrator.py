@@ -1,11 +1,15 @@
 """Pipeline orchestrator — runs steps in sequence with streaming support."""
 
-import asyncio
 import logging
 from typing import AsyncIterator
 
 from .context import PipelineContext
-from .steps import PipelineStep
+from .steps import (
+    EmotionParseStep,
+    LLMStep,
+    PipelineStep,
+    TranslationStep,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,30 +38,35 @@ class PipelineOrchestrator:
         Yields dicts with keys: event (str), data (dict).
         Events: text, emotion, subtitle, done, error
         """
-        for step_idx, step in enumerate(self.steps):
+        for step in self.steps:
             if ctx.error:
                 yield {"event": "error", "data": {"error": ctx.error}}
                 return
 
-            step_name = step.__class__.__name__
             ctx = await step.execute(ctx)
 
-            if isinstance(step, type(self)._get_step_type("LLMStep")):
+            if isinstance(step, LLMStep):
                 if ctx.llm_response:
                     yield {
                         "event": "text",
                         "data": {"text": ctx.llm_response, "model": ctx.llm_model},
                     }
-            elif isinstance(step, type(self)._get_step_type("EmotionParseStep")):
+            elif isinstance(step, EmotionParseStep):
                 if ctx.japanese_text:
                     yield {"event": "text", "data": {"text": ctx.japanese_text}}
                 yield {
                     "event": "emotion",
-                    "data": {"emotion": ctx.emotion, "intensity": ctx.emotion_intensity},
+                    "data": {
+                        "emotion": ctx.emotion,
+                        "intensity": ctx.emotion_intensity,
+                    },
                 }
-            elif isinstance(step, type(self)._get_step_type("TranslationStep")):
+            elif isinstance(step, TranslationStep):
                 if ctx.english_subtitle:
-                    yield {"event": "subtitle", "data": {"subtitle": ctx.english_subtitle}}
+                    yield {
+                        "event": "subtitle",
+                        "data": {"subtitle": ctx.english_subtitle},
+                    }
 
         yield {
             "event": "done",
@@ -67,14 +76,3 @@ class PipelineOrchestrator:
                 "english_subtitle": ctx.english_subtitle,
             },
         }
-
-    @staticmethod
-    def _get_step_type(name: str) -> type:
-        """Lazy import to avoid circular imports."""
-        from .steps import EmotionParseStep, LLMStep, TranslationStep
-
-        return {
-            "LLMStep": LLMStep,
-            "EmotionParseStep": EmotionParseStep,
-            "TranslationStep": TranslationStep,
-        }[name]
