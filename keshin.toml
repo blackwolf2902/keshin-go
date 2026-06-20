@@ -1,10 +1,9 @@
 # Keshin Configuration
 # Merge priority: env > CLI flags > character.toml > keshin.toml > hardcoded defaults
 
-[mode]
-# "web" starts the HTTP server serving frontend.
+# Run mode: "web" starts the HTTP server serving frontend.
 # "desktop" starts the Wails desktop app (future).
-default = "web"
+mode = "web"
 
 [server]
 host = "0.0.0.0"
