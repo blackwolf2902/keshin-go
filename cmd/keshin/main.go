@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/blackwolf2902/keshin-go/internal/config"
+	"github.com/blackwolf2902/keshin-go/internal/server"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -109,7 +110,10 @@ var runCmd = &cobra.Command{
 			zap.String("character", cfg.Character.Default),
 		)
 
-		// TODO: Start server in Task 5
-		select {}
+		// Start HTTP server
+		srv := server.New(cfg, logger)
+		if err := srv.Start(); err != nil {
+			logger.Fatal("Server failed", zap.Error(err))
+		}
 	},
 }
