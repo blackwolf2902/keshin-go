@@ -3,9 +3,10 @@ version: "3"
 tasks:
   dev:
     desc: Start all development services
-    cmds:
-      - task: dev:go
-      - task: dev:ai
+    deps:
+      - dev:ai
+      - dev:go
+      - dev:frontend
 
   dev:go:
     desc: Start Go server

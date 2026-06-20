@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -82,13 +83,21 @@ func (c *Client) Chat(req ChatRequest) (*ChatResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	var chatResp ChatResponse
-	if err := json.NewDecoder(resp.Body).Decode(&chatResp); err != nil {
-		return nil, fmt.Errorf("decode response: %w", err)
+	raw, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		return nil, fmt.Errorf("read python response (HTTP %d): %w", resp.StatusCode, readErr)
 	}
 
-	if chatResp.Error != "" {
-		return &chatResp, fmt.Errorf("chat error: %s", chatResp.Error)
+	var chatResp ChatResponse
+	if err := json.Unmarshal(raw, &chatResp); err != nil {
+		return nil, fmt.Errorf("python returned HTTP %d: %s", resp.StatusCode, string(raw))
+	}
+
+	if resp.StatusCode >= 400 {
+		if chatResp.Error != "" {
+			return nil, fmt.Errorf("python error (HTTP %d): %s", resp.StatusCode, chatResp.Error)
+		}
+		return nil, fmt.Errorf("python returned HTTP %d: %s", resp.StatusCode, string(raw))
 	}
 
 	return &chatResp, nil

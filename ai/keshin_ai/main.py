@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from .config import Settings
 from .llm.gemini import GeminiProvider
@@ -122,7 +122,7 @@ async def chat_stream(request: Request):
     character_lang = request.query_params.get("character_lang", "ja")
 
     if not message:
-        return {"error": "message is required"}, 400
+        return JSONResponse(status_code=400, content={"error": "message is required"})
 
     ctx = PipelineContext(
         user_message=message,
@@ -168,7 +168,7 @@ async def chat(body: dict):
     result = await orchestrator.run(ctx)
 
     if result.error:
-        return {"error": result.error}, 500
+        return JSONResponse(status_code=500, content={"error": result.error})
 
     return {
         "japanese_text": result.japanese_text,
@@ -186,7 +186,7 @@ async def synthesize_tts(body: dict):
     """TTS endpoint — synthesize audio for text."""
     text = body.get("text", "")
     if not text:
-        return {"error": "text is required"}, 400
+        return JSONResponse(status_code=400, content={"error": "text is required"})
 
     try:
         result = await tts_router.synthesize(text=text)
@@ -200,7 +200,7 @@ async def synthesize_tts(body: dict):
         }
     except Exception as e:
         logger.error("TTS synthesis failed: %s", e)
-        return {"error": f"TTS synthesis failed: {e}"}, 500
+        return JSONResponse(status_code=500, content={"error": f"TTS synthesis failed: {e}"})
 
 
 @app.get("/api/characters/{character_id}/voices")

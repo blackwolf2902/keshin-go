@@ -9,7 +9,7 @@ __pycache__/
 *.egg-info/
 
 #docs
-# docs/
+docs/superpowers/
 
 # Node
 node_modules/
