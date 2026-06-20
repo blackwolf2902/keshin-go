@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import type { ChatMessage, Character, HealthResponse } from '../types';
+import { create } from "zustand";
+import type { ChatMessage, Character, HealthResponse } from "../types";
 
 interface ChatStore {
   // State
@@ -11,6 +11,12 @@ interface ChatStore {
   isStreaming: boolean;
   error: string | null;
 
+  // NEW: Audio & expression state from SSE
+  currentAudioUrl: string | null;
+  currentEmotion: string;
+  isSpeaking: boolean;
+  currentSubtitle: string;
+
   // Actions
   setCharacters: (characters: Character[]) => void;
   setCurrentCharacter: (character: Character) => void;
@@ -21,6 +27,12 @@ interface ChatStore {
   setStreaming: (streaming: boolean) => void;
   setError: (error: string | null) => void;
   clearMessages: () => void;
+
+  // NEW: Audio & expression actions
+  setAudioUrl: (url: string | null) => void;
+  setEmotion: (emotion: string) => void;
+  setSpeaking: (speaking: boolean) => void;
+  setSubtitle: (subtitle: string) => void;
 }
 
 export const useChatStore = create<ChatStore>((set) => ({
@@ -31,6 +43,10 @@ export const useChatStore = create<ChatStore>((set) => ({
   isLoading: false,
   isStreaming: false,
   error: null,
+  currentAudioUrl: null,
+  currentEmotion: "neutral",
+  isSpeaking: false,
+  currentSubtitle: "",
 
   setCharacters: (characters) => set({ characters }),
 
@@ -45,7 +61,10 @@ export const useChatStore = create<ChatStore>((set) => ({
     set((state) => {
       const messages = [...state.messages];
       if (messages.length > 0) {
-        messages[messages.length - 1] = { ...messages[messages.length - 1], ...updates };
+        messages[messages.length - 1] = {
+          ...messages[messages.length - 1],
+          ...updates,
+        };
       }
       return { messages };
     }),
@@ -54,4 +73,10 @@ export const useChatStore = create<ChatStore>((set) => ({
   setStreaming: (streaming) => set({ isStreaming: streaming }),
   setError: (error) => set({ error }),
   clearMessages: () => set({ messages: [] }),
+
+  // NEW: Audio & expression actions
+  setAudioUrl: (url) => set({ currentAudioUrl: url }),
+  setEmotion: (emotion) => set({ currentEmotion: emotion }),
+  setSpeaking: (speaking) => set({ isSpeaking: speaking }),
+  setSubtitle: (subtitle) => set({ currentSubtitle: subtitle }),
 }));

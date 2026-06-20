@@ -67,7 +67,14 @@ func (s *Server) registerRoutes() {
 		r.Get("/characters", s.handleListCharacters)
 		r.Post("/chat", s.handleChat)
 		r.Get("/chat/stream", s.handleChatStream)
+
+		// TTS routes — proxy to Python AI service
+		r.Post("/tts", s.handleTTS)
+		r.Get("/tts/audio/{filename}", s.handleTTSAudio)
 	})
+
+	// Static pack file serving (VRM models, expressions, etc.)
+	s.router.Handle("/packs/*", http.StripPrefix("/packs/", http.FileServer(http.Dir("./packs"))))
 }
 
 // Start starts the HTTP server.

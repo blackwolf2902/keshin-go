@@ -1,3 +1,10 @@
+# Expression: Thinking
+# Looking up, slight squint
 [expression]
-blend_shape = "neutral"
-intensity = 0.3
+name = "thinking"
+description = "Looking up thoughtfully"
+
+[blend_shapes]
+lookUp = 0.4
+neutral = 0.3
+blink = 0.1

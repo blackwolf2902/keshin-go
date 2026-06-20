@@ -1,3 +1,16 @@
+# Expression: Happy
+# Bright smile with slightly closed eyes
 [expression]
-blend_shape = "happy"
-intensity = 0.8
+name = "happy"
+description = "Bright smile with warm expression"
+
+[blend_shapes]
+# VRM expression preset weights
+happy = 0.9
+ee = 0.4
+blink = 0.2
+
+[motion]
+# Optional: trigger a VRMA animation clip (Phase 4)
+# clip = "motions/happy_wave.vrma"
+# duration = 2.0

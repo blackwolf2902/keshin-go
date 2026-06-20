@@ -76,7 +76,7 @@ fi
 # Test 4: List characters
 echo ""
 echo "Test 4: List characters endpoint"
-CHARACTERS=$(curl -s http://localhost:9091/api/characters 2>/dev/null || "")
+CHARACTERS=$(curl -s http://localhost:8080/api/characters 2>/dev/null || "")
 # Fallback to Go proxy
 if [ -z "$CHARACTERS" ]; then
     CHARACTERS=$(curl -s http://localhost:8080/api/characters 2>/dev/null || echo "[]")

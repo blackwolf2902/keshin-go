@@ -17,9 +17,11 @@ class OllamaProvider:
         self,
         base_url: str = "http://localhost:11434",
         model: str = "llama3.2:3b",
+        timeout: float = 60.0,
     ):
         self.base_url = base_url
         self.model = model
+        self.timeout = timeout
 
     async def generate(self, messages: list[Message], **kwargs) -> LLMResponse:
         """Generate a complete response from Ollama."""
@@ -28,6 +30,7 @@ class OllamaProvider:
                 model=f"ollama/{self.model}",
                 messages=[{"role": m.role, "content": m.content} for m in messages],
                 api_base=self.base_url,
+                timeout=self.timeout,
                 **kwargs,
             )
             return LLMResponse(
@@ -46,6 +49,7 @@ class OllamaProvider:
                 model=f"ollama/{self.model}",
                 messages=[{"role": m.role, "content": m.content} for m in messages],
                 api_base=self.base_url,
+                timeout=self.timeout,
                 stream=True,
                 **kwargs,
             )

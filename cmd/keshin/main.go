@@ -8,6 +8,7 @@ import (
 	"github.com/blackwolf2902/keshin-go/internal/config"
 	"github.com/blackwolf2902/keshin-go/internal/server"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -47,7 +48,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version information",
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := config.Load()
+		cfg, err := config.Load(nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
 			os.Exit(1)
@@ -60,7 +61,7 @@ var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Print effective configuration",
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := config.Load()
+		cfg, err := config.Load(nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
 			os.Exit(1)
@@ -87,21 +88,23 @@ var runCmd = &cobra.Command{
 			zap.String("character", character),
 		)
 
-		// Load config
-		cfg, err := config.Load()
-		if err != nil {
-			logger.Fatal("Failed to load config", zap.Error(err))
+		// Create viper and bind CLI flags so they participate in the merge chain
+		// at the correct priority (env > CLI flags > character.toml > keshin.toml > defaults)
+		v := viper.New()
+		if err := v.BindPFlag("character.default", cmd.Flags().Lookup("character")); err != nil {
+			logger.Fatal("Failed to bind character flag", zap.Error(err))
+		}
+		if err := v.BindPFlag("mode", cmd.Flags().Lookup("mode")); err != nil {
+			logger.Fatal("Failed to bind mode flag", zap.Error(err))
+		}
+		if err := v.BindPFlag("server.port", cmd.Flags().Lookup("port")); err != nil {
+			logger.Fatal("Failed to bind port flag", zap.Error(err))
 		}
 
-		// Override with CLI flags
-		if character != "" {
-			cfg.Character.Default = character
-		}
-		if mode != "" {
-			cfg.Mode = mode
-		}
-		if port != 0 {
-			cfg.Server.Port = port
+		// Load config (viper with bound flags participates in merge chain)
+		cfg, err := config.Load(v)
+		if err != nil {
+			logger.Fatal("Failed to load config", zap.Error(err))
 		}
 
 		logger.Info("Configuration loaded",

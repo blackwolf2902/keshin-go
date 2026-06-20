@@ -1,0 +1,10 @@
+# Expression: Surprised
+# Wide eyes, open mouth
+[expression]
+name = "surprised"
+description = "Wide eyes and open mouth"
+
+[blend_shapes]
+surprised = 0.9
+aa = 0.4
+blink = 0.0

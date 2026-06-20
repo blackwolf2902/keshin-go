@@ -1,3 +1,7 @@
 [expression]
-blend_shape = "happy"
-intensity = 0.7
+name = "happy"
+description = "A happy expression"
+
+[blend_shapes]
+happy = 0.9
+ee = 0.3

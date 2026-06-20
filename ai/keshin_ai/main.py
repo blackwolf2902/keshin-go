@@ -2,16 +2,20 @@
 
 import json
 import logging
+import os
+import tempfile
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 
 from .config import Settings
+from .llm.base import LLMProvider
 from .llm.gemini import GeminiProvider
 from .llm.groq import GroqProvider
 from .llm.ollama import OllamaProvider
+from .llm.openrouter import OpenRouterProvider
 from .llm.router import LLMRouter
 from .pipeline.context import PipelineContext
 from .pipeline.orchestrator import PipelineOrchestrator
@@ -27,6 +31,9 @@ settings: Settings = None  # type: ignore
 orchestrator: PipelineOrchestrator = None  # type: ignore
 tts_router: TTSRouter = None  # type: ignore
 
+TTS_OUTPUT_DIR = os.path.join(tempfile.gettempdir(), "keshin_tts")
+os.makedirs(TTS_OUTPUT_DIR, exist_ok=True)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,29 +41,56 @@ async def lifespan(app: FastAPI):
     global settings, orchestrator, tts_router
     settings = Settings()
 
-    # Initialize LLM providers
-    groq = GroqProvider(
-        api_key=settings.groq_api_key,
-        model=settings.llm_model,
-        base_url=settings.groq_base_url,
-    )
-    gemini = GeminiProvider(
-        api_key=settings.gemini_api_key,
-        model="gemini-2.0-flash-lite",
-        base_url=settings.gemini_base_url,
-    )
-    ollama = OllamaProvider(
-        base_url=settings.ollama_base_url,
-        model=settings.ollama_model,
-    )
+    # Initialize LLM providers — only register those with API keys (or local providers)
+    providers: list[tuple[str, LLMProvider]] = []
 
-    llm_router = LLMRouter(
-        [
-            ("groq", groq),
-            ("gemini", gemini),
-            ("ollama", ollama),
-        ]
-    )
+    if settings.groq_api_key:
+        groq = GroqProvider(
+            api_key=settings.groq_api_key,
+            model=settings.llm_model,
+            base_url=settings.groq_base_url,
+            timeout=settings.llm_timeout,
+        )
+        providers.append(("groq", groq))
+    else:
+        logger.info("Groq skipped: no API key")
+
+    if settings.gemini_api_key:
+        gemini = GeminiProvider(
+            api_key=settings.gemini_api_key,
+            model="gemini-2.0-flash-lite",
+            base_url=settings.gemini_base_url,
+            timeout=settings.llm_timeout,
+        )
+        providers.append(("gemini", gemini))
+    else:
+        logger.info("Gemini skipped: no API key")
+
+    # OpenRouter has free tier models — use as fallback when no paid keys available
+    if settings.openrouter_api_key:
+        openrouter = OpenRouterProvider(
+            api_key=settings.openrouter_api_key,
+            model=settings.openrouter_model,
+            base_url=settings.openrouter_base_url,
+            timeout=settings.llm_timeout,
+        )
+        providers.append(("openrouter", openrouter))
+    else:
+        logger.info("OpenRouter skipped: no API key")
+
+    # Ollama is local — only include if explicitly requested (or as last fallback)
+    if settings.llm_provider == "ollama":
+        ollama = OllamaProvider(
+            base_url=settings.ollama_base_url,
+            model=settings.ollama_model,
+            timeout=settings.llm_timeout,
+        )
+        providers.append(("ollama", ollama))
+
+    if not providers:
+        raise RuntimeError("No LLM providers configured. Set GROQ_API_KEY or GEMINI_API_KEY.")
+
+    llm_router = LLMRouter(providers)
 
     translator = LLMTranslationProvider(llm_router)
 
@@ -176,31 +210,44 @@ async def chat(body: dict):
         "emotion": result.emotion,
         "emotion_intensity": result.emotion_intensity,
         "model": result.llm_model,
-        "audio_path": result.audio_path,
+        "audio_url": f"/api/tts/audio/{os.path.basename(result.audio_path)}" if result.audio_path else None,
         "audio_duration_ms": result.audio_duration_ms,
     }
 
 
 @app.post("/api/tts")
-async def synthesize_tts(body: dict):
-    """TTS endpoint — synthesize audio for text."""
-    text = body.get("text", "")
-    if not text:
+async def synthesize_tts(request: dict):
+    """Synthesize speech for text and return audio URL + viseme timings."""
+    import re
+
+    clean_text = re.sub(r"\[emotion:\w+\]", "", request.get("text", "")).strip()
+
+    if not clean_text:
         return JSONResponse(status_code=400, content={"error": "text is required"})
 
     try:
-        result = await tts_router.synthesize(text=text)
+        result = await tts_router.synthesize(text=clean_text)
         return {
-            "audio_path": result.audio_path,
+            "audio_url": f"/api/tts/audio/{os.path.basename(result.audio_path)}",
             "duration_ms": result.duration_ms,
             "visemes": [
-                {"index": v.index, "offset_ms": v.offset_ms, "duration_ms": v.duration_ms}
+                {"viseme": v["viseme"], "time_ms": v["time_ms"], "duration_ms": v["duration_ms"]}
                 for v in result.visemes
             ],
         }
     except Exception as e:
         logger.error("TTS synthesis failed: %s", e)
         return JSONResponse(status_code=500, content={"error": f"TTS synthesis failed: {e}"})
+
+
+@app.get("/api/tts/audio/{filename}")
+async def get_tts_audio(filename: str):
+    """Serve generated TTS audio files."""
+    filepath = os.path.join(TTS_OUTPUT_DIR, filename)
+    if not os.path.exists(filepath):
+        return JSONResponse(status_code=404, content={"error": "Audio file not found"})
+    media_type = "audio/wav" if filename.endswith(".wav") else "audio/mpeg"
+    return FileResponse(filepath, media_type=media_type)
 
 
 @app.get("/api/characters/{character_id}/voices")

@@ -43,14 +43,17 @@ type VoiceConfig struct {
 
 // Expression represents an emotion expression from an expression file.
 type Expression struct {
-	Name       string  `toml:"-"`
-	BlendShape string  `toml:"blend_shape"`
-	Intensity  float64 `toml:"intensity,omitempty"`
+	Name        string             `toml:"-"`
+	BlendShapes map[string]float64 `toml:"blend_shapes"`
 }
 
 // CharacterExpressionFile is the TOML structure for individual expression files.
 type CharacterExpressionFile struct {
-	Expression Expression `toml:"expression"`
+	Expression struct {
+		Name        string `toml:"name"`
+		Description string `toml:"description,omitempty"`
+	} `toml:"expression"`
+	BlendShapes map[string]float64 `toml:"blend_shapes"`
 }
 
 // LoadPack loads a character pack from the given directory path.
@@ -101,9 +104,10 @@ func LoadPack(packDir string) (*CharacterPack, error) {
 			if err := loadTOMLFile(exprPath, &exprFile); err != nil {
 				return nil, fmt.Errorf("load expression %s: %w", entry.Name(), err)
 			}
-			expr := exprFile.Expression
-			expr.Name = trimExt(entry.Name())
-			pack.Expressions = append(pack.Expressions, expr)
+			pack.Expressions = append(pack.Expressions, Expression{
+				Name:        trimExt(entry.Name()),
+				BlendShapes: exprFile.BlendShapes,
+			})
 		}
 	}
 

@@ -18,10 +18,12 @@ class GroqProvider:
         api_key: str = "",
         model: str = "llama-3.3-70b-versatile",
         base_url: str = "https://api.groq.com/openai/v1",
+        timeout: float = 60.0,
     ):
         self.api_key = api_key
         self.model = model
         self.base_url = base_url
+        self.timeout = timeout
 
     async def generate(self, messages: list[Message], **kwargs) -> LLMResponse:
         """Generate a complete response from Groq."""
@@ -30,6 +32,7 @@ class GroqProvider:
                 model=f"groq/{self.model}",
                 messages=[{"role": m.role, "content": m.content} for m in messages],
                 api_key=self.api_key or None,
+                timeout=self.timeout,
                 **kwargs,
             )
             return LLMResponse(
@@ -48,6 +51,7 @@ class GroqProvider:
                 model=f"groq/{self.model}",
                 messages=[{"role": m.role, "content": m.content} for m in messages],
                 api_key=self.api_key or None,
+                timeout=self.timeout,
                 stream=True,
                 **kwargs,
             )

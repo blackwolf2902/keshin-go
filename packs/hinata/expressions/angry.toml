@@ -1,0 +1,10 @@
+# Expression: Angry
+# Furrowed brows, tense jaw
+[expression]
+name = "angry"
+description = "Furrowed brows with tense expression"
+
+[blend_shapes]
+angry = 0.9
+oh = 0.15
+lookDown = 0.1

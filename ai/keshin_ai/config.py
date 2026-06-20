@@ -11,10 +11,12 @@ class Settings(BaseSettings):
     llm_model: str = "llama-3.3-70b-versatile"
     llm_max_tokens: int = 512
     llm_temperature: float = 0.7
+    llm_timeout: float = 60.0  # seconds
 
     # Provider API keys
     groq_api_key: str = ""
     gemini_api_key: str = ""
+    openrouter_api_key: str = ""
 
     # Provider base URLs
     groq_base_url: str = "https://api.groq.com/openai/v1"
@@ -36,4 +38,7 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 9090
 
-    model_config = {"env_prefix": "keshin_", "env_file": ".env", "extra": "ignore"}
+    model_config = {
+        "env_file": [".env", "../.env"],
+        "extra": "ignore",
+    }

@@ -66,6 +66,11 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
+// BaseURL returns the base URL of the Python AI service.
+func (c *Client) BaseURL() string {
+	return c.baseURL
+}
+
 // Chat sends a chat request to the Python AI service.
 func (c *Client) Chat(req ChatRequest) (*ChatResponse, error) {
 	body, err := json.Marshal(req)

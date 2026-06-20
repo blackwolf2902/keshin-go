@@ -14,9 +14,9 @@ func TestLoadPack_Hinata(t *testing.T) {
 
 	assert.Equal(t, "Hinata", pack.Character.Name)
 	assert.Equal(t, "ja", pack.Character.Lang)
-	assert.Equal(t, "A cheerful and energetic Japanese high school girl", pack.Character.Description)
-	assert.Equal(t, "Keshin Dev", pack.Character.Author)
-	assert.Equal(t, "0.1.0", pack.Character.Version)
+	assert.Equal(t, "A cheerful schoolgirl who loves ramen and stargazing.", pack.Character.Description)
+	assert.Equal(t, "keshin-community", pack.Character.Author)
+	assert.Equal(t, "1.0.0", pack.Character.Version)
 	assert.NotEmpty(t, pack.SystemPrompt)
 	assert.Contains(t, pack.SystemPrompt, "Hinata")
 
@@ -25,11 +25,19 @@ func TestLoadPack_Hinata(t *testing.T) {
 	assert.Equal(t, "edge-tts", pack.Voice.Provider)
 
 	// Expressions
-	require.Len(t, pack.Expressions, 2)
-	assert.Equal(t, "happy", pack.Expressions[0].Name)
-	assert.Equal(t, 0.8, pack.Expressions[0].Intensity)
-	assert.Equal(t, "thinking", pack.Expressions[1].Name)
-	assert.Equal(t, 0.3, pack.Expressions[1].Intensity)
+	require.Len(t, pack.Expressions, 6)
+	// Find happy expression by name (files loaded alphabetically)
+	happyFound := false
+	for _, e := range pack.Expressions {
+		if e.Name == "happy" {
+			happyFound = true
+			assert.NotNil(t, e.BlendShapes)
+			assert.Contains(t, e.BlendShapes, "happy")
+			break
+		}
+	}
+	assert.True(t, happyFound, "happy expression should be in pack")
+	assert.Contains(t, pack.Expressions[0].BlendShapes, "angry", "first expression should be angry")
 }
 
 func TestLoadPack_Example(t *testing.T) {

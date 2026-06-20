@@ -16,6 +16,8 @@ export interface ChatResponse {
   emotion: string;
   emotion_intensity: number;
   model: string;
+  audio_url?: string;
+  audio_duration_ms?: number;
 }
 
 export interface ChatMessage {

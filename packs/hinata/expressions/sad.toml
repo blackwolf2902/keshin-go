@@ -1,0 +1,10 @@
+# Expression: Sad
+# Downcast eyes, slight frown
+[expression]
+name = "sad"
+description = "Downcast eyes with a melancholy expression"
+
+[blend_shapes]
+sad = 0.8
+lookDown = 0.3
+blink = 0.15

@@ -75,6 +75,7 @@ class PipelineOrchestrator:
                         "data": {
                             "path": ctx.audio_path,
                             "duration_ms": ctx.audio_duration_ms,
+                            "visemes": ctx.visemes,
                         },
                     }
 

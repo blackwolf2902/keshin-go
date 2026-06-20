@@ -86,6 +86,16 @@ export function useChat() {
           emotion: response.emotion,
           emotion_intensity: response.emotion_intensity,
         });
+        if (response.audio_url) {
+          useChatStore.getState().setAudioUrl(response.audio_url);
+          useChatStore.getState().setSpeaking(true);
+        }
+        if (response.emotion) {
+          useChatStore.getState().setEmotion(response.emotion);
+        }
+        if (response.english_subtitle) {
+          useChatStore.getState().setSubtitle(response.english_subtitle);
+        }
       } catch (err) {
         updateLastMessage({
           content: `Error: ${err instanceof Error ? err.message : "Request failed"}`,
@@ -140,6 +150,13 @@ export function useChat() {
             updateLastMessage({
               english_subtitle: (chunk.data as { subtitle: string }).subtitle,
             });
+          } else if (chunk.event === "audio") {
+            const audioData = chunk.data as { path: string; duration_ms: number };
+            if (audioData.path) {
+              const filename = audioData.path.split('/').pop() || audioData.path;
+              useChatStore.getState().setAudioUrl(`/api/tts/audio/${filename}`);
+              useChatStore.getState().setSpeaking(true);
+            }
           }
         }
       } catch (err) {

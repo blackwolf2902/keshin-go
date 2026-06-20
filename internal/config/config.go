@@ -83,8 +83,14 @@ type TranslationConfig struct {
 
 // Load reads and merges configuration with the priority:
 // env > CLI flags > character.toml > keshin.toml > hardcoded defaults
-func Load(configPaths ...string) (*Config, error) {
-	v := viper.New()
+//
+// If v is nil, a new viper instance is created. Callers that bind CLI flags
+// via v.BindPFlag should pass the pre-configured viper instance so flags
+// participate in the merge chain at the correct priority level.
+func Load(v *viper.Viper, configPaths ...string) (*Config, error) {
+	if v == nil {
+		v = viper.New()
+	}
 
 	// 1. Set defaults
 	bindDefaults(v)

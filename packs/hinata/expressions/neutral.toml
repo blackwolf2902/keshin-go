@@ -1,0 +1,9 @@
+# Expression: Neutral
+# Resting face — subtle default expression
+[expression]
+name = "neutral"
+description = "Relaxed resting face"
+
+[blend_shapes]
+# VRM expression preset weights (0.0 - 1.0)
+neutral = 0.4

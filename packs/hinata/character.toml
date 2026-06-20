@@ -1,14 +1,56 @@
-# Hinata — Character Pack
+# ============================================================
+# Hinata Character Pack — Phase 1B Update
+# ============================================================
 
 [character]
 name = "Hinata"
+version = "1.0.0"
+description = "A cheerful schoolgirl who loves ramen and stargazing."
+author = "keshin-community"
 lang = "ja"
-description = "A cheerful and energetic Japanese high school girl"
-author = "Keshin Dev"
-version = "0.1.0"
+input_lang = "en"
+tags = ["anime", "school", "cheerful", "female"]
+
+[model]
+type = "vrm"
+path = "model.vrm"
 
 [voice]
 provider = "edge-tts"
 speaker = "ja-JP-NanamiNeural"
-rate = "+10%"
-pitch = "+10Hz"
+speed = 1.0
+rate = "+0%"
+pitch = "+0Hz"
+
+[voice.edge_tts]
+voice = "ja-JP-NanamiNeural"
+
+[personality]
+path = "personality/system.md"
+tone = "cheerful, slightly shy, uses Japanese honorifics"
+greeting = "あ、こんにちは！会えて嬉しいよ！へへへ..."
+farewell = "じゃあね！また遊ぼうね！"
+
+[translation]
+provider = "llm"
+style = "natural"
+
+[expressions]
+path = "expressions/"
+
+[expressions.defaults]
+neutral = ["neutral"]
+happy = ["happy"]
+sad = ["sad"]
+angry = ["angry"]
+surprised = ["surprised"]
+thinking = ["thinking"]
+
+[motions]
+path = "motions/"
+idle = "motions/idle.vrma"
+# speaking = "motions/talking.vrma"
+
+[memory]
+max_context_messages = 50
+summarize_after = 30
