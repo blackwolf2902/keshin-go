@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+/* Custom styles */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', 'Noto Sans JP', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Chat bubble styles */
+.chat-bubble-user {
+  @apply bg-indigo-600 text-white rounded-2xl rounded-tr-sm px-4 py-2 max-w-[75%] self-end;
+}
+
+.chat-bubble-character {
+  @apply bg-gray-700 text-gray-100 rounded-2xl rounded-tl-sm px-4 py-2 max-w-[75%] self-start;
+}
+
+/* Emotion badge */
+.emotion-badge {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+}
+
+/* Subtitle overlay */
+.subtitle-overlay {
+  @apply bg-black/60 backdrop-blur-sm text-white text-center px-6 py-3 rounded-lg text-lg max-w-2xl mx-auto;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
+}
+
+/* Input focus ring */
+input:focus {
+  @apply outline-none ring-2 ring-indigo-500;
+}

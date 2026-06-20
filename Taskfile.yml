@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 tasks:
   dev:
@@ -22,7 +22,7 @@ tasks:
     desc: Start frontend dev server
     dir: frontend
     cmds:
-      - npm run dev
+      - bun run dev
 
   build:
     desc: Build all
@@ -39,7 +39,7 @@ tasks:
     desc: Build frontend
     dir: frontend
     cmds:
-      - npm run build
+      - bun run build
 
   lint:
     desc: Lint all
@@ -101,4 +101,4 @@ tasks:
   setup:frontend:
     dir: frontend
     cmds:
-      - npm install
+      - bun install
