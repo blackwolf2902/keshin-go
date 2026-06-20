@@ -42,23 +42,60 @@ tasks:
       - bun run build
 
   lint:
-    desc: Lint all
+    desc: Check all code for lint errors
     cmds:
-      - golangci-lint run
+      - task: lint:go
       - task: lint:ai
       - task: lint:frontend
+      - task: lint:tsc
+
+  lint:go:
+    desc: Check Go code with go vet
+    cmds:
+      - go vet ./...
 
   lint:ai:
-    desc: Lint Python
+    desc: Check Python code with ruff
     dir: ai
     cmds:
       - uv run ruff check .
 
   lint:frontend:
-    desc: Lint frontend
+    desc: Check frontend code with eslint
     dir: frontend
     cmds:
       - npx eslint src/
+
+  lint:tsc:
+    desc: TypeScript type check (no emit)
+    dir: frontend
+    cmds:
+      - bun run tsc --noEmit
+
+  lint:fix:
+    desc: Auto-fix all lint issues
+    cmds:
+      - task: lint:fix:go
+      - task: lint:fix:ai
+      - task: lint:fix:frontend
+
+  lint:fix:go:
+    desc: Auto-fix Go (go fmt + go vet)
+    cmds:
+      - go fmt ./...
+      - go vet ./...
+
+  lint:fix:ai:
+    desc: Auto-fix Python with ruff
+    dir: ai
+    cmds:
+      - uv run ruff check . --fix
+
+  lint:fix:frontend:
+    desc: Auto-fix frontend with eslint
+    dir: frontend
+    cmds:
+      - npx eslint src/ --fix
 
   test:
     desc: Run all tests

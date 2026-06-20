@@ -1,7 +1,5 @@
 """Python AI service configuration loaded from keshin.toml."""
 
-from typing import Optional
-
 from pydantic_settings import BaseSettings
 
 

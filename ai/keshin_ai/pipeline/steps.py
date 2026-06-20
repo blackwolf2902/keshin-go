@@ -2,7 +2,6 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from ..emotion.parser import parse_emotion
 from ..llm.base import Message as LLMMessage
@@ -23,7 +22,7 @@ class PipelineStep(ABC):
         ...
 
 
-class ContextStep:
+class ContextStep(PipelineStep):
     """Loads personality and history into the context."""
 
     def __init__(self):
@@ -31,7 +30,7 @@ class ContextStep:
 
     async def execute(self, ctx: PipelineContext) -> PipelineContext:
         """Build the system prompt and load history."""
-        logger.info("step.context", character_id=ctx.character_id, session_id=ctx.session_id)
+        logger.info("step.context: character=%s session=%s", ctx.character_id, ctx.session_id)
         # Personality and history are already loaded by the caller;
         # this step validates their presence.
         if not ctx.personality_prompt:
@@ -39,7 +38,7 @@ class ContextStep:
         return ctx
 
 
-class LLMStep:
+class LLMStep(PipelineStep):
     """Calls the LLM router to generate a response."""
 
     def __init__(self, llm_router: LLMRouter, system_prompt_builder=None):
@@ -77,15 +76,15 @@ class LLMStep:
             ctx.llm_response = response.text
             ctx.llm_model = response.model
             ctx.llm_usage = response.usage
-            logger.info("step.llm.complete", model=response.model, tokens=response.usage)
+            logger.info("step.llm.complete: model=%s tokens=%s", response.model, response.usage)
         except Exception as e:
             ctx.error = f"LLM generation failed: {e}"
-            logger.error("step.llm.failed", error=str(e))
+            logger.error("step.llm.failed: %s", e)
 
         return ctx
 
 
-class EmotionParseStep:
+class EmotionParseStep(PipelineStep):
     """Extracts emotion tags from LLM response."""
 
     async def execute(self, ctx: PipelineContext) -> PipelineContext:
@@ -97,12 +96,12 @@ class EmotionParseStep:
         ctx.japanese_text = result.clean_text
         ctx.emotion = result.emotion
         ctx.emotion_intensity = result.intensity
-        logger.info("step.emotion", emotion=ctx.emotion, intensity=ctx.emotion_intensity)
+        logger.info("step.emotion: emotion=%s intensity=%s", ctx.emotion, ctx.emotion_intensity)
 
         return ctx
 
 
-class TranslationStep:
+class TranslationStep(PipelineStep):
     """Translates Japanese text to English for subtitle display."""
 
     def __init__(self, translator: TranslationProvider):
@@ -119,16 +118,16 @@ class TranslationStep:
                 source_lang=ctx.character_lang or "ja",
                 target_lang="en",
             )
-            logger.info("step.translation.complete", subtitle=ctx.english_subtitle[:50])
+            logger.info("step.translation.complete: subtitle=%s", ctx.english_subtitle[:50])
         except Exception as e:
-            logger.warning("step.translation.failed", error=str(e))
+            logger.warning("step.translation.failed: %s", e)
             # Translation failure is non-fatal — show original text as subtitle
             ctx.english_subtitle = ctx.japanese_text
 
         return ctx
 
 
-class TTSStep:
+class TTSStep(PipelineStep):
     """Synthesizes audio from Japanese text using TTS provider."""
 
     def __init__(self, tts_provider: TTSProvider):
@@ -146,9 +145,11 @@ class TTSStep:
             ctx.audio_path = result.audio_path
             ctx.audio_duration_ms = result.duration_ms
             ctx.visemes = result.visemes
-            logger.info("step.tts.complete", path=result.audio_path, duration=result.duration_ms)
+            logger.info(
+                "step.tts.complete: path=%s duration=%s", result.audio_path, result.duration_ms
+            )
         except Exception as e:
-            logger.warning("step.tts.failed", error=str(e))
+            logger.warning("step.tts.failed: %s", e)
             # TTS failure is non-fatal for text pipeline
 
         return ctx

@@ -7,7 +7,7 @@ import uuid
 
 import httpx
 
-from .base import TTSProvider, TTSResponse, VisemeTiming
+from .base import TTSResponse, VisemeTiming
 
 logger = logging.getLogger(__name__)
 
@@ -70,10 +70,10 @@ class VoiceVoxProvider:
         duration_ms = (len(text) / 15.0) * 1000.0
 
         logger.info(
-            "VOICEVOX TTS synthesized",
-            text_len=len(text),
-            path=output_path,
-            speaker=sid,
+            "VOICEVOX TTS synthesized: text_len=%s path=%s speaker=%s",
+            len(text),
+            output_path,
+            sid,
         )
 
         return TTSResponse(
@@ -90,5 +90,5 @@ class VoiceVoxProvider:
                 response.raise_for_status()
                 return response.json()
         except Exception as e:
-            logger.warning("Failed to list VOICEVOX speakers", error=str(e))
+            logger.warning("Failed to list VOICEVOX speakers: %s", e)
             return []

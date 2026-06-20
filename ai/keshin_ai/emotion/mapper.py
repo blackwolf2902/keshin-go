@@ -1,7 +1,8 @@
 """Map emotion names to VRM blend shape preset names."""
 
 # Mapping from emotion names to VRM blend shape preset names.
-# VRM spec defines these presets: neutral, happy, angry, sad, relaxed, surprised, aa, ih, ou, ee, oh, blink
+# VRM blend shape presets: neutral, happy, angry, sad, relaxed,
+# surprised, aa, ih, ou, ee, oh, blink
 EMOTION_TO_BLEND_SHAPE: dict[str, str] = {
     "neutral": "neutral",
     "happy": "happy",

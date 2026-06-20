@@ -1,7 +1,6 @@
 """LLM router with provider selection and fallback."""
 
 import asyncio
-import logging
 from typing import AsyncIterator
 
 import structlog

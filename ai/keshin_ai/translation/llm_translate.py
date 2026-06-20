@@ -1,10 +1,8 @@
 """LLM-based translation provider."""
 
 import logging
-from typing import AsyncIterator
 
 from ..llm.base import LLMProvider, Message
-from .base import TranslationProvider
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,5 @@
 """TTS router — selects and falls back between TTS providers."""
 
-import logging
-
 import structlog
 
 from .base import TTSProvider, TTSResponse

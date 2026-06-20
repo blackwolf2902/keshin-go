@@ -1,7 +1,5 @@
 """Tests for the emotion parser."""
 
-import pytest
-
 from keshin_ai.emotion.parser import parse_emotion
 
 

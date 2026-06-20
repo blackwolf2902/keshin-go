@@ -31,9 +31,9 @@ class OllamaProvider:
                 **kwargs,
             )
             return LLMResponse(
-                text=response.choices[0].message.content,
+                text=response.choices[0].message.content,  # type: ignore
                 model=self.model,
-                usage=dict(response.usage or {}),
+                usage=dict(response.usage or {}),  # type: ignore
             )
         except Exception as e:
             logger.error("Ollama API error: %s", e)
@@ -49,9 +49,9 @@ class OllamaProvider:
                 stream=True,
                 **kwargs,
             )
-            async for chunk in response:
-                if chunk.choices and len(chunk.choices) > 0:
-                    delta = chunk.choices[0].delta
+            async for chunk in response:  # type: ignore
+                if chunk.choices and len(chunk.choices) > 0:  # type: ignore
+                    delta = chunk.choices[0].delta  # type: ignore
                     if delta and delta.content:
                         yield delta.content
         except Exception as e:

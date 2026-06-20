@@ -7,7 +7,7 @@ import uuid
 
 import edge_tts
 
-from .base import TTSProvider, TTSResponse, VisemeTiming
+from .base import TTSResponse
 
 logger = logging.getLogger(__name__)
 
@@ -65,10 +65,10 @@ class EdgeTTSProvider:
         duration_ms = (len(text) / 15.0) * 1000.0
 
         logger.info(
-            "Edge TTS synthesized",
-            text_len=len(text),
-            path=output_path,
-            duration_ms=duration_ms,
+            "Edge TTS synthesized: text_len=%s path=%s duration_ms=%s",
+            len(text),
+            output_path,
+            duration_ms,
         )
 
         return TTSResponse(

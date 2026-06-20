@@ -5,7 +5,7 @@ from typing import AsyncIterator
 
 from litellm import acompletion
 
-from .base import LLMProvider, LLMResponse, Message
+from .base import LLMResponse, Message
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +33,9 @@ class GroqProvider:
                 **kwargs,
             )
             return LLMResponse(
-                text=response.choices[0].message.content,
+                text=response.choices[0].message.content,  # type: ignore[union-attr]
                 model=self.model,
-                usage=dict(response.usage or {}),
+                usage=dict(response.usage or {}),  # type: ignore[union-attr]
             )
         except Exception as e:
             logger.error("Groq API error: %s", e)
@@ -51,9 +51,9 @@ class GroqProvider:
                 stream=True,
                 **kwargs,
             )
-            async for chunk in response:
-                if chunk.choices and len(chunk.choices) > 0:
-                    delta = chunk.choices[0].delta
+            async for chunk in response:  # type: ignore[union-attr]
+                if chunk.choices and len(chunk.choices) > 0:  # type: ignore[union-attr]
+                    delta = chunk.choices[0].delta  # type: ignore[union-attr]
                     if delta and delta.content:
                         yield delta.content
         except Exception as e:

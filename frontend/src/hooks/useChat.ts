@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { useChatStore } from '../stores/chatStore';
-import { getCharacters, getHealth, sendChat, streamChat } from '../lib/api';
+import { useCallback, useEffect, useRef } from "react";
+import { useChatStore } from "../stores/chatStore";
+import { getCharacters, getHealth, sendChat, streamChat } from "../lib/api";
 
 let messageIdCounter = 0;
 function nextId(): string {
@@ -8,141 +8,170 @@ function nextId(): string {
 }
 
 export function useChat() {
-  const store = useChatStore();
+  // Use individual selectors so stable action references don't trigger re-renders
+  const currentCharacter = useChatStore((s) => s.currentCharacter);
+  const messages = useChatStore((s) => s.messages);
+  const characters = useChatStore((s) => s.characters);
+  const health = useChatStore((s) => s.health);
+  const isLoading = useChatStore((s) => s.isLoading);
+  const isStreaming = useChatStore((s) => s.isStreaming);
+  const error = useChatStore((s) => s.error);
+  const setCharacters = useChatStore((s) => s.setCharacters);
+  const setCurrentCharacter = useChatStore((s) => s.setCurrentCharacter);
+  const setHealth = useChatStore((s) => s.setHealth);
+  const addMessage = useChatStore((s) => s.addMessage);
+  const updateLastMessage = useChatStore((s) => s.updateLastMessage);
+  const setLoading = useChatStore((s) => s.setLoading);
+  const setStreaming = useChatStore((s) => s.setStreaming);
+  const setError = useChatStore((s) => s.setError);
+  const clearMessages = useChatStore((s) => s.clearMessages);
+
   const abortRef = useRef<AbortController | null>(null);
 
   // Load characters and health on mount
   useEffect(() => {
     (async () => {
       try {
-        const [characters, health] = await Promise.all([
+        const [fetchedCharacters, fetchedHealth] = await Promise.all([
           getCharacters(),
           getHealth(),
         ]);
-        store.setCharacters(characters);
-        store.setHealth(health);
+        setCharacters(fetchedCharacters);
+        setHealth(fetchedHealth);
 
         // Set default character
-        if (characters.length > 0 && !store.currentCharacter) {
-          const preferred = characters.find((c) => c.id !== '_example') ?? characters[0];
-          store.setCurrentCharacter(preferred);
+        if (fetchedCharacters.length > 0 && !currentCharacter) {
+          const preferred =
+            fetchedCharacters.find((c) => c.id !== "_example") ??
+            fetchedCharacters[0];
+          setCurrentCharacter(preferred);
         }
       } catch (err) {
-        store.setError(`Failed to connect: ${err instanceof Error ? err.message : 'Unknown'}`);
+        setError(
+          `Failed to connect: ${err instanceof Error ? err.message : "Unknown"}`,
+        );
       }
     })();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendMessage = useCallback(
     async (message: string) => {
-      if (!message.trim() || !store.currentCharacter) return;
+      if (!message.trim() || !currentCharacter) return;
 
       const userMsg = {
         id: nextId(),
-        role: 'user' as const,
+        role: "user" as const,
         content: message.trim(),
         timestamp: Date.now(),
       };
-      store.addMessage(userMsg);
-      store.setLoading(true);
-      store.setError(null);
+      addMessage(userMsg);
+      setLoading(true);
+      setError(null);
 
-      // Placeholder character message
       const charMsg = {
         id: nextId(),
-        role: 'character' as const,
-        content: '',
+        role: "character" as const,
+        content: "",
         timestamp: Date.now(),
       };
-      store.addMessage(charMsg);
+      addMessage(charMsg);
 
       try {
         abortRef.current = new AbortController();
-        const response = await sendChat(
-          store.currentCharacter.id,
-          message.trim(),
-        );
+        const response = await sendChat(currentCharacter.id, message.trim());
 
-        store.updateLastMessage({
+        updateLastMessage({
           content: response.japanese_text,
           english_subtitle: response.english_subtitle,
           emotion: response.emotion,
           emotion_intensity: response.emotion_intensity,
         });
       } catch (err) {
-        store.updateLastMessage({
-          content: `Error: ${err instanceof Error ? err.message : 'Request failed'}`,
+        updateLastMessage({
+          content: `Error: ${err instanceof Error ? err.message : "Request failed"}`,
         });
-        store.setError(err instanceof Error ? err.message : 'Request failed');
+        setError(err instanceof Error ? err.message : "Request failed");
       } finally {
-        store.setLoading(false);
+        setLoading(false);
         abortRef.current = null;
       }
     },
-    [store.currentCharacter?.id],
+    [currentCharacter?.id, addMessage, setLoading, setError, updateLastMessage],
   );
 
   const sendMessageStream = useCallback(
     async (message: string) => {
-      if (!message.trim() || !store.currentCharacter) return;
+      if (!message.trim() || !currentCharacter) return;
 
       const userMsg = {
         id: nextId(),
-        role: 'user' as const,
+        role: "user" as const,
         content: message.trim(),
         timestamp: Date.now(),
       };
-      store.addMessage(userMsg);
-      store.setStreaming(true);
-      store.setError(null);
+      addMessage(userMsg);
+      setStreaming(true);
+      setError(null);
 
       const charMsg = {
         id: nextId(),
-        role: 'character' as const,
-        content: '',
-        emotion: 'neutral' as const,
+        role: "character" as const,
+        content: "",
+        emotion: "neutral" as const,
         timestamp: Date.now(),
       };
-      store.addMessage(charMsg);
+      addMessage(charMsg);
 
       try {
-        const stream = streamChat(
-          store.currentCharacter.id,
-          message.trim(),
-        );
+        const stream = streamChat(currentCharacter.id, message.trim());
 
         for await (const chunk of stream) {
-          if (chunk.event === 'text') {
-            store.updateLastMessage({
+          if (chunk.event === "text") {
+            updateLastMessage({
               content: (chunk.data as { text: string }).text,
             });
-          } else if (chunk.event === 'emotion') {
-            store.updateLastMessage({
+          } else if (chunk.event === "emotion") {
+            updateLastMessage({
               emotion: (chunk.data as { emotion: string }).emotion,
-              emotion_intensity: (chunk.data as { intensity?: number }).intensity,
+              emotion_intensity: (chunk.data as { intensity?: number })
+                .intensity,
             });
-          } else if (chunk.event === 'subtitle') {
-            store.updateLastMessage({
+          } else if (chunk.event === "subtitle") {
+            updateLastMessage({
               english_subtitle: (chunk.data as { subtitle: string }).subtitle,
             });
           }
         }
       } catch (err) {
-        store.updateLastMessage({
-          content: `Error: ${err instanceof Error ? err.message : 'Stream failed'}`,
+        updateLastMessage({
+          content: `Error: ${err instanceof Error ? err.message : "Stream failed"}`,
         });
-        store.setError(err instanceof Error ? err.message : 'Stream failed');
+        setError(err instanceof Error ? err.message : "Stream failed");
       } finally {
-        store.setStreaming(false);
+        setStreaming(false);
       }
     },
-    [store.currentCharacter?.id],
+    [
+      currentCharacter?.id,
+      addMessage,
+      setStreaming,
+      setError,
+      updateLastMessage,
+    ],
   );
 
   return {
-    ...store,
+    messages,
+    characters,
+    currentCharacter,
+    health,
+    isLoading,
+    isStreaming,
+    error,
     sendMessage,
     sendMessageStream,
-    isDisabled: store.isLoading || store.isStreaming,
+    setCurrentCharacter,
+    clearMessages,
+    isDisabled: isLoading || isStreaming,
   };
 }

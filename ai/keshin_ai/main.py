@@ -17,7 +17,6 @@ from .pipeline.context import PipelineContext
 from .pipeline.orchestrator import PipelineOrchestrator
 from .pipeline.steps import ContextStep, EmotionParseStep, LLMStep, TranslationStep, TTSStep
 from .translation.llm_translate import LLMTranslationProvider
-from .tts.base import TTSResponse
 from .tts.edge_tts import EdgeTTSProvider
 from .tts.router import TTSRouter
 
@@ -80,7 +79,7 @@ async def lifespan(app: FastAPI):
         ]
     )
 
-    logger.info("AI service initialized", provider=settings.llm_provider)
+    logger.info("AI service initialized: provider=%s", settings.llm_provider)
     yield
     logger.info("AI service shutting down")
 
@@ -200,7 +199,7 @@ async def synthesize_tts(body: dict):
             ],
         }
     except Exception as e:
-        logger.error("TTS synthesis failed", error=str(e))
+        logger.error("TTS synthesis failed: %s", e)
         return {"error": f"TTS synthesis failed: {e}"}, 500
 
 

@@ -7,7 +7,7 @@ import uuid
 
 import httpx
 
-from .base import TTSProvider, TTSResponse, VisemeTiming
+from .base import TTSResponse, VisemeTiming
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +60,9 @@ class KokoroProvider:
         duration_ms = (len(text) / 15.0) * 1000.0  # Rough estimate
 
         logger.info(
-            "Kokoro TTS synthesized",
-            text_len=len(text),
-            path=output_path,
+            "Kokoro TTS synthesized: text_len=%s path=%s",
+            len(text),
+            output_path,
         )
 
         return TTSResponse(
@@ -80,5 +80,5 @@ class KokoroProvider:
                 data = response.json()
                 return [m["id"] for m in data.get("data", [])]
         except Exception as e:
-            logger.warning("Failed to list Kokoro voices", error=str(e))
+            logger.warning("Failed to list Kokoro voices: %s", e)
             return ["default"]
