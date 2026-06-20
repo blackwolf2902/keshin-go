@@ -1,0 +1,14 @@
+# _example — Template Character Pack
+
+[character]
+name = "Example"
+lang = "ja"
+description = "A template character pack for Keshin"
+author = "Keshin Dev"
+version = "0.1.0"
+
+[voice]
+provider = "edge-tts"
+speaker = "ja-JP-NanamiNeural"
+rate = "+0%"
+pitch = "+0Hz"

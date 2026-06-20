@@ -1,0 +1,14 @@
+# Hinata — Character Pack
+
+[character]
+name = "Hinata"
+lang = "ja"
+description = "A cheerful and energetic Japanese high school girl"
+author = "Keshin Dev"
+version = "0.1.0"
+
+[voice]
+provider = "edge-tts"
+speaker = "ja-JP-NanamiNeural"
+rate = "+10%"
+pitch = "+10Hz"

@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Character Pack Schema",
+  "description": "Schema for keshin character pack character.toml files",
+  "type": "object",
+  "required": ["character"],
+  "properties": {
+    "character": {
+      "type": "object",
+      "description": "Character metadata",
+      "required": ["name", "lang"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Character display name"
+        },
+        "lang": {
+          "type": "string",
+          "description": "Character language code (e.g., ja, en)",
+          "pattern": "^[a-z]{2}(-[A-Z]{2})?$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Short character description"
+        },
+        "author": {
+          "type": "string",
+          "description": "Pack author name"
+        },
+        "version": {
+          "type": "string",
+          "description": "Pack version string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "description": "3D model configuration (optional for Phase 1A)",
+      "properties": {
+        "vrm": {
+          "type": "string",
+          "description": "Path to VRM model file"
+        }
+      }
+    },
+    "voice": {
+      "type": "object",
+      "description": "Voice/TTS configuration",
+      "required": ["provider"],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "description": "TTS provider name",
+          "enum": ["edge-tts", "kokoro", "voicevox"]
+        },
+        "speaker": {
+          "type": "string",
+          "description": "Speaker or voice name"
+        },
+        "rate": {
+          "type": "string",
+          "description": "Speech rate adjustment",
+          "pattern": "^[+-]\\d+%$"
+        },
+        "pitch": {
+          "type": "string",
+          "description": "Pitch adjustment",
+          "pattern": "^[+-]\\d+Hz$"
+        }
+      }
+    },
+    "expressions": {
+      "type": "object",
+      "description": "Expression-to-blendshape mappings",
+      "patternProperties": {
+        "^[a-z_]+$": {
+          "type": "object",
+          "properties": {
+            "blend_shape": {
+              "type": "string",
+              "description": "VRM blend shape preset name"
+            },
+            "intensity": {
+              "type": "number",
+              "description": "Blend shape intensity (0.0–1.0)",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}
