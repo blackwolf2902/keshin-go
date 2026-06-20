@@ -1,0 +1,14 @@
+services:
+  voicevox:
+    image: voicevox/voicevox_engine:latest
+    ports:
+      - "50021:50021"
+    profiles:
+      - tts
+
+  kokoro:
+    image: ghcr.io/remsky/kokoro-fastapi:latest
+    ports:
+      - "8880:8880"
+    profiles:
+      - tts

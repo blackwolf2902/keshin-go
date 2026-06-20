@@ -1,0 +1,104 @@
+version: '3'
+
+tasks:
+  dev:
+    desc: Start all development services
+    cmds:
+      - task: dev:go
+      - task: dev:ai
+
+  dev:go:
+    desc: Start Go server
+    cmds:
+      - go run ./cmd/keshin run --mode web --port 8080
+
+  dev:ai:
+    desc: Start Python AI service
+    dir: ai
+    cmds:
+      - uv run uvicorn keshin_ai.main:app --reload --port 9090
+
+  dev:frontend:
+    desc: Start frontend dev server
+    dir: frontend
+    cmds:
+      - npm run dev
+
+  build:
+    desc: Build all
+    cmds:
+      - task: build:go
+      - task: build:frontend
+
+  build:go:
+    desc: Build Go binary
+    cmds:
+      - go build -o bin/keshin ./cmd/keshin
+
+  build:frontend:
+    desc: Build frontend
+    dir: frontend
+    cmds:
+      - npm run build
+
+  lint:
+    desc: Lint all
+    cmds:
+      - golangci-lint run
+      - task: lint:ai
+      - task: lint:frontend
+
+  lint:ai:
+    desc: Lint Python
+    dir: ai
+    cmds:
+      - uv run ruff check .
+
+  lint:frontend:
+    desc: Lint frontend
+    dir: frontend
+    cmds:
+      - npx eslint src/
+
+  test:
+    desc: Run all tests
+    cmds:
+      - go test ./...
+      - task: test:ai
+
+  test:ai:
+    desc: Run Python tests
+    dir: ai
+    cmds:
+      - uv run pytest
+
+  docker:voicevox:
+    desc: Start VOICEVOX container (optional)
+    cmds:
+      - docker compose up -d voicevox
+
+  docker:kokoro:
+    desc: Start Kokoro container (optional)
+    cmds:
+      - docker compose up -d kokoro
+
+  setup:
+    desc: One-command dev setup
+    cmds:
+      - task: setup:go
+      - task: setup:ai
+      - task: setup:frontend
+
+  setup:go:
+    cmds:
+      - go mod download
+
+  setup:ai:
+    dir: ai
+    cmds:
+      - uv sync
+
+  setup:frontend:
+    dir: frontend
+    cmds:
+      - npm install

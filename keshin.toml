@@ -1,0 +1,66 @@
+# Keshin Configuration
+# Merge priority: env > CLI flags > character.toml > keshin.toml > hardcoded defaults
+
+[mode]
+# "web" starts the HTTP server serving frontend.
+# "desktop" starts the Wails desktop app (future).
+default = "web"
+
+[server]
+host = "0.0.0.0"
+port = 8080
+
+[log]
+level = "info"
+format = "console"  # "console" or "json"
+
+[llm]
+provider = "groq"
+model = "llama-3.3-70b-versatile"
+max_tokens = 512
+temperature = 0.7
+
+[llm.groq]
+api_key = ""  # Set via GROQ_API_KEY env var or keshin.toml
+model = "llama-3.3-70b-versatile"
+base_url = "https://api.groq.com/openai/v1"
+
+[llm.gemini]
+api_key = ""  # Set via GEMINI_API_KEY env var
+model = "gemini-2.0-flash-lite"
+base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
+
+[llm.ollama]
+base_url = "http://localhost:11434"
+model = "llama3.2:3b"
+
+[llm.openrouter]
+api_key = ""
+model = "meta-llama/llama-3.2-3b-instruct:free"
+base_url = "https://openrouter.ai/api/v1"
+
+[tts]
+provider = "edge-tts"
+
+[tts.edge_tts]
+voice = "ja-JP-NanamiNeural"
+rate = "+0%"
+pitch = "+0Hz"
+
+[tts.kokoro]
+base_url = "http://localhost:8880"
+voice = "default"
+
+[tts.voicevox]
+base_url = "http://localhost:50021"
+speaker_id = 0
+
+[character]
+default = "hinata"
+packs_dir = "packs"
+
+[translation]
+enabled = true
+provider = "llm"
+source_lang = "ja"
+target_lang = "en"
