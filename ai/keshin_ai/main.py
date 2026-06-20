@@ -15,20 +15,24 @@ from .llm.ollama import OllamaProvider
 from .llm.router import LLMRouter
 from .pipeline.context import PipelineContext
 from .pipeline.orchestrator import PipelineOrchestrator
-from .pipeline.steps import ContextStep, EmotionParseStep, LLMStep, TranslationStep
+from .pipeline.steps import ContextStep, EmotionParseStep, LLMStep, TranslationStep, TTSStep
 from .translation.llm_translate import LLMTranslationProvider
+from .tts.base import TTSResponse
+from .tts.edge_tts import EdgeTTSProvider
+from .tts.router import TTSRouter
 
 logger = logging.getLogger(__name__)
 
 # Global state (set during lifespan)
 settings: Settings = None  # type: ignore
 orchestrator: PipelineOrchestrator = None  # type: ignore
+tts_router: TTSRouter = None  # type: ignore
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize services on startup, clean up on shutdown."""
-    global settings, orchestrator
+    global settings, orchestrator, tts_router
     settings = Settings()
 
     # Initialize LLM providers
@@ -57,6 +61,14 @@ async def lifespan(app: FastAPI):
 
     translator = LLMTranslationProvider(llm_router)
 
+    # Initialize TTS providers
+    edge_tts_provider = EdgeTTSProvider(
+        voice=settings.edge_tts_voice,
+        rate=settings.edge_tts_rate,
+        pitch=settings.edge_tts_pitch,
+    )
+    tts_router = TTSRouter([("edge-tts", edge_tts_provider)])
+
     # Build pipeline
     orchestrator = PipelineOrchestrator(
         [
@@ -64,6 +76,7 @@ async def lifespan(app: FastAPI):
             LLMStep(llm_router),
             EmotionParseStep(),
             TranslationStep(translator),
+            TTSStep(tts_router),
         ]
     )
 
@@ -164,4 +177,38 @@ async def chat(body: dict):
         "emotion": result.emotion,
         "emotion_intensity": result.emotion_intensity,
         "model": result.llm_model,
+        "audio_path": result.audio_path,
+        "audio_duration_ms": result.audio_duration_ms,
+    }
+
+
+@app.post("/api/tts")
+async def synthesize_tts(body: dict):
+    """TTS endpoint — synthesize audio for text."""
+    text = body.get("text", "")
+    if not text:
+        return {"error": "text is required"}, 400
+
+    try:
+        result = await tts_router.synthesize(text=text)
+        return {
+            "audio_path": result.audio_path,
+            "duration_ms": result.duration_ms,
+            "visemes": [
+                {"index": v.index, "offset_ms": v.offset_ms, "duration_ms": v.duration_ms}
+                for v in result.visemes
+            ],
+        }
+    except Exception as e:
+        logger.error("TTS synthesis failed", error=str(e))
+        return {"error": f"TTS synthesis failed: {e}"}, 500
+
+
+@app.get("/api/characters/{character_id}/voices")
+async def list_voices(character_id: str):
+    """List available voices for a character."""
+    return {
+        "character_id": character_id,
+        "provider": settings.tts_provider if settings else "unknown",
+        "voices": [settings.edge_tts_voice] if settings else [],
     }

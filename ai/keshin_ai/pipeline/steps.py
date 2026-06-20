@@ -5,10 +5,10 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from ..emotion.parser import parse_emotion
-from ..llm.base import LLMProvider
 from ..llm.base import Message as LLMMessage
 from ..llm.router import LLMRouter
 from ..translation.base import TranslationProvider
+from ..tts.base import TTSProvider
 from .context import PipelineContext
 
 logger = logging.getLogger(__name__)
@@ -124,5 +124,31 @@ class TranslationStep:
             logger.warning("step.translation.failed", error=str(e))
             # Translation failure is non-fatal — show original text as subtitle
             ctx.english_subtitle = ctx.japanese_text
+
+        return ctx
+
+
+class TTSStep:
+    """Synthesizes audio from Japanese text using TTS provider."""
+
+    def __init__(self, tts_provider: TTSProvider):
+        self.tts_provider = tts_provider
+
+    async def execute(self, ctx: PipelineContext) -> PipelineContext:
+        """Synthesize audio for the Japanese text."""
+        if ctx.error or not ctx.japanese_text:
+            return ctx
+
+        try:
+            result = await self.tts_provider.synthesize(
+                text=ctx.japanese_text,
+            )
+            ctx.audio_path = result.audio_path
+            ctx.audio_duration_ms = result.duration_ms
+            ctx.visemes = result.visemes
+            logger.info("step.tts.complete", path=result.audio_path, duration=result.duration_ms)
+        except Exception as e:
+            logger.warning("step.tts.failed", error=str(e))
+            # TTS failure is non-fatal for text pipeline
 
         return ctx

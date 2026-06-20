@@ -9,6 +9,7 @@ from .steps import (
     LLMStep,
     PipelineStep,
     TranslationStep,
+    TTSStep,
 )
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ class PipelineOrchestrator:
         """Execute pipeline and yield intermediate results as SSE events.
 
         Yields dicts with keys: event (str), data (dict).
-        Events: text, emotion, subtitle, done, error
+        Events: text, emotion, subtitle, audio, done, error
         """
         for step in self.steps:
             if ctx.error:
@@ -67,6 +68,15 @@ class PipelineOrchestrator:
                         "event": "subtitle",
                         "data": {"subtitle": ctx.english_subtitle},
                     }
+            elif isinstance(step, TTSStep):
+                if ctx.audio_path:
+                    yield {
+                        "event": "audio",
+                        "data": {
+                            "path": ctx.audio_path,
+                            "duration_ms": ctx.audio_duration_ms,
+                        },
+                    }
 
         yield {
             "event": "done",
@@ -74,5 +84,7 @@ class PipelineOrchestrator:
                 "emotion": ctx.emotion,
                 "japanese_text": ctx.japanese_text,
                 "english_subtitle": ctx.english_subtitle,
+                "audio_path": ctx.audio_path,
+                "audio_duration_ms": ctx.audio_duration_ms,
             },
         }
