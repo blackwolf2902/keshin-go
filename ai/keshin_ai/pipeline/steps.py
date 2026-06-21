@@ -32,9 +32,9 @@ class ContextStep(PipelineStep):
         """Build the system prompt and load history."""
         logger.info("step.context: character=%s session=%s", ctx.character_id, ctx.session_id)
         # Personality and history are already loaded by the caller;
-        # this step validates their presence.
+        # this step validates their presence or falls back to a default.
         if not ctx.personality_prompt:
-            ctx.error = "No personality prompt loaded for character"
+            ctx.personality_prompt = "You are a helpful anime assistant."
         return ctx
 
 

@@ -4,6 +4,8 @@ import { VRMScene, type VRMSceneContext } from './VRMScene';
 import { loadVRM } from './VRMLoader';
 import { applyIdleAnimation, AutoBlinker } from './VRMIdleAnimation';
 import type { EmotionName } from './types';
+import { VRMExpressionManager } from './VRMExpressionManager';
+import { VRMLipSync } from './VRMLipSync';
 
 interface VRMRendererProps {
   modelUrl: string;
@@ -12,6 +14,8 @@ interface VRMRendererProps {
   currentExpression?: EmotionName;
   isSpeaking?: boolean;
   className?: string;
+  expressionManager?: VRMExpressionManager;
+  lipSync?: VRMLipSync;
 }
 
 export function VRMRenderer({
@@ -19,6 +23,8 @@ export function VRMRenderer({
   onModelLoaded,
   onModelError,
   className,
+  expressionManager,
+  lipSync,
 }: VRMRendererProps) {
   const sceneContextRef = useRef<VRMSceneContext | null>(null);
   const vrmRef = useRef<VRM | null>(null);
@@ -26,6 +32,7 @@ export function VRMRenderer({
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [sceneReady, setSceneReady] = useState(false);
 
   // Load VRM model when URL changes
   useEffect(() => {
@@ -55,6 +62,11 @@ export function VRMRenderer({
         // Add model to scene
         scene.add(vrm.scene);
         vrmRef.current = vrm;
+
+        // Bind VRM to managers
+        expressionManager?.setVRM(vrm);
+        lipSync?.setVRM(vrm);
+
         setLoaded(true);
         onModelLoaded?.(vrm);
       })
@@ -68,7 +80,7 @@ export function VRMRenderer({
     return () => {
       cancelled = true;
     };
-  }, [modelUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [modelUrl, sceneReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Animation loop for VRM updates
   useEffect(() => {
@@ -87,6 +99,12 @@ export function VRMRenderer({
         // Apply idle animation (breathing + sway)
         applyIdleAnimation(vrm, delta, elapsed);
 
+        // Update expression manager (handles emotion blend shapes)
+        expressionManager?.update(delta);
+
+        // Update lip sync (mouth visemes)
+        lipSync?.update(delta);
+
         // Auto-blink (more natural than constant blink in idle)
         blinkerRef.current.update(elapsed, vrm);
 
@@ -100,10 +118,11 @@ export function VRMRenderer({
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [loaded]);
+  }, [loaded, expressionManager, lipSync]);
 
   const handleSceneReady = useCallback((ctx: VRMSceneContext) => {
     sceneContextRef.current = ctx;
+    setSceneReady(true);
   }, []);
 
   return (

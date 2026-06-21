@@ -16,7 +16,7 @@ export default function App() {
     isLoading,
     isStreaming,
     isDisabled,
-    sendMessage,
+    sendMessageStream,
     setCurrentCharacter,
   } = useChat();
 
@@ -57,7 +57,7 @@ export default function App() {
           messages={messages}
           isLoading={isLoading}
           isStreaming={isStreaming}
-          onSend={sendMessage}
+          onSend={sendMessageStream}
           characterName={currentCharacter?.name ?? "Character"}
         />
       </div>

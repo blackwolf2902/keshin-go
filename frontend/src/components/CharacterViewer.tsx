@@ -1,9 +1,10 @@
-import { useRef, useCallback, useEffect, Component, type ReactNode } from 'react';
+import { useRef, useCallback, useEffect, Component, type ReactNode, useMemo } from 'react';
 import { VRM } from '@pixiv/three-vrm';
 import { VRMRenderer } from '../renderers/vrm/VRMRenderer';
 import { VRMExpressionManager } from '../renderers/vrm/VRMExpressionManager';
 import { VRMLipSync } from '../renderers/vrm/VRMLipSync';
 import { useCharacterStore } from '../stores/characterStore';
+import { useExpression } from '../hooks/useExpression';
 
 interface CharacterViewerProps {
   modelUrl?: string;
@@ -49,30 +50,36 @@ export class CharacterErrorBoundary extends Component<ErrorBoundaryProps, ErrorB
 }
 
 export function CharacterViewer({ modelUrl, className }: CharacterViewerProps) {
-  const expressionManagerRef = useRef<VRMExpressionManager | null>(null);
-  const lipSyncRef = useRef<VRMLipSync | null>(null);
+  const expressionManager = useMemo(() => new VRMExpressionManager(), []);
+  const lipSync = useMemo(() => new VRMLipSync(), []);
   const vrmRef = useRef<VRM | null>(null);
 
   const isSpeaking = useCharacterStore((s) => s.isSpeaking);
+  const setLipSync = useCharacterStore((s) => s.setLipSync);
 
-  // Initialize managers
+  // Bind lipSync instance to characterStore so audio player can trigger it
   useEffect(() => {
-    expressionManagerRef.current = new VRMExpressionManager();
-    lipSyncRef.current = new VRMLipSync();
-  }, []);
+    setLipSync(lipSync);
+    return () => {
+      setLipSync(null);
+    };
+  }, [setLipSync, lipSync]);
+
+  // Activate expression manager hook
+  useExpression(expressionManager);
 
   // React to speaking state — enable/disable lip-sync
   useEffect(() => {
     if (!isSpeaking) {
-      lipSyncRef.current?.stopLipSync();
+      lipSync.stopLipSync();
     }
-  }, [isSpeaking]);
+  }, [isSpeaking, lipSync]);
 
   const handleModelLoaded = useCallback((vrm: VRM) => {
     vrmRef.current = vrm;
-    expressionManagerRef.current?.setVRM(vrm);
-    lipSyncRef.current?.setVRM(vrm);
-  }, []);
+    expressionManager.setVRM(vrm);
+    lipSync.setVRM(vrm);
+  }, [expressionManager, lipSync]);
 
   const handleError = useCallback((error: Error) => {
     console.error('[CharacterViewer] VRM load error:', error);
@@ -87,6 +94,8 @@ export function CharacterViewer({ modelUrl, className }: CharacterViewerProps) {
         modelUrl={resolvedUrl}
         onModelLoaded={handleModelLoaded}
         onModelError={handleError}
+        expressionManager={expressionManager}
+        lipSync={lipSync}
         className="w-full h-full"
       />
     </div>

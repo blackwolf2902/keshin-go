@@ -43,8 +43,8 @@ export function VRMScene({ config: configOverride, className, onSceneReady }: VR
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMap = THREE.ACESFilmicToneMap;
-    renderer.toneMapExposure = 1.0;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
     container.appendChild(renderer.domElement);
 
     // Scene
@@ -93,8 +93,6 @@ export function VRMScene({ config: configOverride, className, onSceneReady }: VR
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-
-      clock.getDelta();
 
       // Update controls
       controls.update();

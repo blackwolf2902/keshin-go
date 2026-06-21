@@ -210,7 +210,11 @@ async def chat(body: dict):
         "emotion": result.emotion,
         "emotion_intensity": result.emotion_intensity,
         "model": result.llm_model,
-        "audio_url": f"/api/tts/audio/{os.path.basename(result.audio_path)}" if result.audio_path else None,
+        "audio_url": (
+            f"/api/tts/audio/{os.path.basename(result.audio_path)}"
+            if result.audio_path
+            else None
+        ),
         "audio_duration_ms": result.audio_duration_ms,
     }
 

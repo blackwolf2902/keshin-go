@@ -35,6 +35,8 @@ type ChatResponse struct {
 	Emotion          string  `json:"emotion"`
 	EmotionIntensity float64 `json:"emotion_intensity"`
 	Model            string  `json:"model"`
+	AudioUrl         string  `json:"audio_url"`
+	AudioDurationMs  float64 `json:"audio_duration_ms"`
 	Error            string  `json:"error,omitempty"`
 }
 

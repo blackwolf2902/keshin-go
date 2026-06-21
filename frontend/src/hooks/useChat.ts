@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useChatStore } from "../stores/chatStore";
 import { getCharacters, getHealth, sendChat, streamChat } from "../lib/api";
+import { useCharacterStore } from "../stores/characterStore";
+import { estimateVisemesFromText } from "../lib/visemeMap";
+import type { VisemeFrame } from "../renderers/vrm/types";
 
 let messageIdCounter = 0;
 function nextId(): string {
@@ -89,6 +92,8 @@ export function useChat() {
         if (response.audio_url) {
           useChatStore.getState().setAudioUrl(response.audio_url);
           useChatStore.getState().setSpeaking(true);
+          const estimatedVisemes = estimateVisemesFromText(response.japanese_text || message.trim());
+          useCharacterStore.getState().setVisemeFrames(estimatedVisemes);
         }
         if (response.emotion) {
           useChatStore.getState().setEmotion(response.emotion);
@@ -106,7 +111,7 @@ export function useChat() {
         abortRef.current = null;
       }
     },
-    [currentCharacter?.id, addMessage, setLoading, setError, updateLastMessage],
+    [currentCharacter, addMessage, setLoading, setError, updateLastMessage],
   );
 
   const sendMessageStream = useCallback(
@@ -141,21 +146,42 @@ export function useChat() {
               content: (chunk.data as { text: string }).text,
             });
           } else if (chunk.event === "emotion") {
+            const emotionData = chunk.data as { emotion: string; intensity?: number };
             updateLastMessage({
-              emotion: (chunk.data as { emotion: string }).emotion,
-              emotion_intensity: (chunk.data as { intensity?: number })
-                .intensity,
+              emotion: emotionData.emotion,
+              emotion_intensity: emotionData.intensity,
             });
+            // Also update chatStore so any other subscribers see the emotion
+            useChatStore.getState().setEmotion(emotionData.emotion);
           } else if (chunk.event === "subtitle") {
             updateLastMessage({
               english_subtitle: (chunk.data as { subtitle: string }).subtitle,
             });
           } else if (chunk.event === "audio") {
-            const audioData = chunk.data as { path: string; duration_ms: number };
+            const audioData = chunk.data as {
+              path: string;
+              duration_ms: number;
+              visemes?: Array<{ viseme: string; time_ms: number; duration_ms: number }>;
+            };
             if (audioData.path) {
               const filename = audioData.path.split('/').pop() || audioData.path;
               useChatStore.getState().setAudioUrl(`/api/tts/audio/${filename}`);
               useChatStore.getState().setSpeaking(true);
+
+              let frames: VisemeFrame[] = [];
+              if (audioData.visemes && audioData.visemes.length > 0) {
+                frames = audioData.visemes.map((v) => ({
+                  viseme: v.viseme,
+                  startTimeMs: v.time_ms,
+                  durationMs: v.duration_ms,
+                }));
+              } else {
+                const messages = useChatStore.getState().messages;
+                const lastMessage = messages[messages.length - 1];
+                const text = lastMessage?.content || "";
+                frames = estimateVisemesFromText(text);
+              }
+              useCharacterStore.getState().setVisemeFrames(frames);
             }
           }
         }
@@ -169,7 +195,7 @@ export function useChat() {
       }
     },
     [
-      currentCharacter?.id,
+      currentCharacter,
       addMessage,
       setStreaming,
       setError,

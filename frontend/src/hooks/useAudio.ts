@@ -16,15 +16,19 @@ export function useAudio(events?: AudioEvents) {
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const audioBufferRef = useRef<AudioBuffer | null>(null);
   const isPlayingRef = useRef(false);
+  const eventsRef = useRef(events);
+
+  // Update eventsRef safely inside an effect
+  useEffect(() => {
+    eventsRef.current = events;
+  }, [events]);
 
   const setSpeaking = useChatStore((s) => s.setSpeaking);
 
   // Initialize AudioContext lazily (browsers require user gesture)
   const getAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext({
-        sampleRate: 22050, // Edge TTS default sample rate
-      });
+      audioContextRef.current = new AudioContext();
     }
     return audioContextRef.current;
   }, []);
@@ -52,6 +56,22 @@ export function useAudio(events?: AudioEvents) {
   }, [getAudioContext]);
 
   /**
+   * Stop currently playing audio.
+   */
+  const stop = useCallback(() => {
+    if (sourceRef.current) {
+      try {
+        sourceRef.current.stop();
+      } catch {
+        // Source may already be stopped
+      }
+      sourceRef.current = null;
+    }
+    isPlayingRef.current = false;
+    setSpeaking(false);
+  }, [setSpeaking]);
+
+  /**
    * Play audio from URL. Stops any currently playing audio first.
    */
   const play = useCallback(async (url: string) => {
@@ -74,7 +94,7 @@ export function useAudio(events?: AudioEvents) {
       source.onended = () => {
         isPlayingRef.current = false;
         setSpeaking(false);
-        events?.onPlayEnd?.();
+        eventsRef.current?.onPlayEnd?.();
         sourceRef.current = null;
       };
 
@@ -82,31 +102,14 @@ export function useAudio(events?: AudioEvents) {
       sourceRef.current = source;
       isPlayingRef.current = true;
       setSpeaking(true);
-      events?.onPlayStart?.();
+      eventsRef.current?.onPlayStart?.();
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       console.error('Audio playback error:', error);
       setSpeaking(false);
-      events?.onError?.(error);
+      eventsRef.current?.onError?.(error);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadAudio, getAudioContext, setSpeaking]);
-
-  /**
-   * Stop currently playing audio.
-   */
-  function stop() {
-    if (sourceRef.current) {
-      try {
-        sourceRef.current.stop();
-      } catch {
-        // Source may already be stopped
-      }
-      sourceRef.current = null;
-    }
-    isPlayingRef.current = false;
-    setSpeaking(false);
-  }
+  }, [loadAudio, getAudioContext, setSpeaking, stop]);
 
   /**
    * Check if audio is currently playing.
@@ -122,9 +125,7 @@ export function useAudio(events?: AudioEvents) {
         audioContextRef.current = null;
       }
     };
-    // stop uses only refs and setSpeaking — stable across renders
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [stop]);
 
   return { play, stop, isPlaying, loadAudio };
 }

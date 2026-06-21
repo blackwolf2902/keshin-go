@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { VRM } from '@pixiv/three-vrm';
 import type { EmotionName, VisemeFrame } from '../renderers/vrm/types';
+import type { VRMLipSync } from '../renderers/vrm/VRMLipSync';
 
 interface CharacterState {
   // Model state
@@ -23,6 +24,9 @@ interface CharacterState {
 
   // Viseme data from TTS (or estimated)
   visemeFrames: VisemeFrame[];
+
+  // Lip-sync controller instance
+  lipSync: VRMLipSync | null;
 }
 
 interface CharacterActions {
@@ -36,6 +40,7 @@ interface CharacterActions {
   setCurrentViseme: (viseme: string) => void;
   setAudioUrl: (url: string | null) => void;
   setVisemeFrames: (frames: VisemeFrame[]) => void;
+  setLipSync: (lipSync: VRMLipSync | null) => void;
   reset: () => void;
 }
 
@@ -51,6 +56,7 @@ const initialState: CharacterState = {
   currentViseme: 'neutral',
   currentAudioUrl: null,
   visemeFrames: [],
+  lipSync: null,
 };
 
 export const useCharacterStore = create<CharacterState & CharacterActions>()((set) => ({
@@ -75,6 +81,7 @@ export const useCharacterStore = create<CharacterState & CharacterActions>()((se
   setCurrentViseme: (viseme) => set({ currentViseme: viseme }),
   setAudioUrl: (url) => set({ currentAudioUrl: url }),
   setVisemeFrames: (frames) => set({ visemeFrames: frames }),
+  setLipSync: (lipSync) => set({ lipSync }),
 
   reset: () => set(initialState),
 }));

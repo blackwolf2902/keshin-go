@@ -128,11 +128,11 @@ export class VRMExpressionManager {
   }
 
   /**
-   * Reset all expression weights to zero.
+   * Reset all expression weights to zero (except blink which AutoBlinker controls).
    */
-  private clearAllExpressions(manager: NonNullable<ReturnType<VRM['expressionManager']>>): void {
-    // Reset all preset expressions
-    const presets = ['aa', 'ih', 'ou', 'ee', 'oh', 'blink', 'blinkLeft', 'blinkRight',
+  private clearAllExpressions(manager: NonNullable<VRM['expressionManager']>): void {
+    // Reset all preset expressions EXCEPT blink (controlled by AutoBlinker)
+    const presets = ['aa', 'ih', 'ou', 'ee', 'oh',
       'happy', 'angry', 'sad', 'relaxed', 'surprised', 'neutral', 'lookUp', 'lookDown',
       'lookLeft', 'lookRight'];
 
