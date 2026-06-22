@@ -1,0 +1,5 @@
+Existing Ones:
+
+https://github.com/Open-LLM-VTuber/Open-LLM-VTuber
+
+https://github.com/moeru-ai/airi
